@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>도로명주소 검색</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafb;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #4f46e5;
+    }
+    .search-box {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .search-box input {
+      width: calc(50% - 10px);
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      transition: border 0.3s;
+    }
+    .search-box input:focus {
+      border-color: #4f46e5;
+      outline: none;
+    }
+    .search-box button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 0;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    .search-box button:hover {
+      background: #4338ca;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 30px auto 0;
+      max-width: 800px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f3f4f6;
+    }
+    tr:hover {
+      background: #f9fafb;
+    }
+
+    @media(max-width: 600px) {
+      .search-box input {
+        width: calc(100% - 10px);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>도로명주소 검색</h1>
+
+<div class="search-box">
+  <input type="text" id="city" placeholder="시도명 (예: 서울특별시)">
+  <input type="text" id="district" placeholder="시군구명 (예: 은평구)">
+  <input type="text" id="road" placeholder="도로명 (예: 갈현로29길)">
+  <input type="text" id="mainNo" placeholder="건물본번 (예: 11)">
+  <input type="text" id="subNo" placeholder="건물부번 (없으면 공백)">
+  <button onclick="search()">검색하기</button>
+</div>
+
+<table id="results" style="display:none;">
+  <thead>
+  <tr>
+    <th>No.</th>
+    <th>도로명주소</th>
+    <th>우편번호</th>
+  </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  function search() {
+      const city = document.getElementById('city').value;
+      const district = document.getElementById('district').value;
+      const road = document.getElementById('road').value;
+      const mainNo = document.getElementById('mainNo').value;
+      const subNo = document.getElementById('subNo').value;
+
+      if(!city || !district || !road) {
+          alert("시도명, 시군구명, 도로명은 필수 입력입니다.");
+          return;
+      }
+
+      // null 처리
+      const mainQuery = mainNo ? `&mainBuildingNo=${mainNo}` : '';
+      const subQuery = subNo ? `&subBuildingNo=${subNo}` : '';
+
+      fetch(`/road-address/search?sido=${encodeURIComponent(city)}&sigungu=${encodeURIComponent(district)}&roadName=${encodeURIComponent(road)}${mainQuery}${subQuery}`)
+      .then(res => res.json())
+      .then(data => {
+          const table = document.getElementById('results');
+          const tbody = table.querySelector('tbody');
+          tbody.innerHTML = "";
+          if(data.length === 0){
+              tbody.innerHTML = "<tr><td colspan='3' style='text-align:center;'>검색 결과가 없습니다.</td></tr>";
+          } else {
+              data.forEach((item, index) => {
+                  const tr = document.createElement('tr');
+                  tr.innerHTML = `
+                      <td>${index + 1}</td>
+                      <td>${item.roadAddress}</td>
+                      <td>${item.zipCode}</td>
+                  `;
+                  tbody.appendChild(tr);
+              });
+          }
+          table.style.display = 'table';
+      })
+      .catch(err => {
+          console.error('검색 실패', err);
+          alert("검색 중 오류가 발생했습니다.");
+      });
+  }
+</script>
+
+</body>
+</html>
